@@ -511,7 +511,7 @@ def compilation(cmd) :
         if ASem_erreur :
             pass
         else :
-            print("Analyse Syntaxique valide !")
+            print("Analyse Sémantique valide !")
         
         
         print("\n################################################################################################################", end="\n")
