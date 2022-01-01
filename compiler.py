@@ -558,7 +558,7 @@ if __name__ == '__main__' :
             
     #     compilation(cmd)
         
-    with open("final/program.txt", "r") as inputFile:
+    with open("program.txt", "r") as inputFile:
         cmd = inputFile.read()
             
     compilation(cmd)
