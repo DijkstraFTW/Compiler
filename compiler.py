@@ -445,7 +445,7 @@ def compilation(cmd) :
         AL_erreur = False
         ASy_erreur = False
         ASem_erreur = False
-        GenCode_erreur = False
+        GenCode_erreur = True
         
 
         # Analyse lexicale
@@ -547,6 +547,7 @@ def compilation(cmd) :
         
         
         if not ASy_erreur :
+            GenCode_erreur = False
             for i in VIC :
                 print(i, end="\n")
         
