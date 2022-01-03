@@ -56,7 +56,7 @@ class Token:
                 return kind
         return None    
 
-
+ 
 class Lexer:
     def __init__(self, input):
         self.source = input + '\n'
@@ -166,10 +166,11 @@ class Lexer:
 
 # Parser object keeps track of current token and checks if the code matches the grammar.
 class Parser:
-    def __init__(self, lexer, ASy, ASem):
+    def __init__(self, lexer, ASy, ASem, VIC):
         self.lexer = lexer
         self.ASy = ASy
         self.ASem = ASem
+        self.VIC = VIC
         
 
         self.symbols = {}    # All variables we have declared so far.
@@ -221,7 +222,7 @@ class Parser:
         
         if self.checkToken(TokenType.NUMBER):
             self.expression()
-            self.nl()       
+            self.nl()      
 
         # "WHILE" comparison "REPEAT" {statement} "ENDWHILE"
         if self.checkToken(TokenType.WHILE):
@@ -271,6 +272,8 @@ class Parser:
                 self.ASem.append(ErreurSemIllegal("Changement de valeur de constantes impossible (" + var_name + ")"))
             else :            
                 self.symbols[var_name] = temp
+                self.VIC.append("STORE @ " + var_name)
+                self.VIC.append("\n")
                 
             
         elif self.checkToken(TokenType.VAR):
@@ -296,6 +299,9 @@ class Parser:
                 temp += self.ASy[i].text
                         
             self.symbols[var_name] = temp
+            self.VIC.append("STORE @ " + var_name)
+            self.VIC.append("\n")
+            
 
         # This is not a valid statement. Error!
         else:
@@ -329,19 +335,29 @@ class Parser:
     # expression ::= term {( "-" | "+" ) term}
     def expression(self):
 
-        self.term()        
+        n = self.term()     
+             
         # Can have 0 or more +/- and expressions.
         while self.checkToken(TokenType.PLUS) or self.checkToken(TokenType.MINUS):
-            #print("(" + str(self.curToken.kind) +": " + str(self.curToken.text) + ")", end=" ")
             self.ASy.append(self.curToken)
             self.nextToken()
             self.term()
+            
+        if n.kind == (TokenType.PLUS) :
+            self.VIC.append("ADD " + self.curToken.text)
+        elif n.kind == (TokenType.MINUS) :
+            self.VIC.append("SUB " + self.curToken.text)
+        if n.kind == (TokenType.ASTERISK) :
+            self.VIC.append("MUL " + self.curToken.text)
+        elif n.kind == (TokenType.SLASH) :
+            self.VIC.append("DIV " + self.curToken.text) 
 
 
     # term ::= unary {( "/" | "*" ) unary}
     def term(self):
 
         self.unary()
+        temp = self.curToken
         # Can have 0 or more *// and expressions.
         while self.checkToken(TokenType.ASTERISK) or self.checkToken(TokenType.SLASH):
             if self.checkToken(TokenType.SLASH) :
@@ -354,6 +370,8 @@ class Parser:
                 self.ASy.append(self.curToken)
                 self.nextToken()
                 self.unary()
+        
+        return temp
 
 
     # unary ::= ["+" | "-"] primary
@@ -369,12 +387,14 @@ class Parser:
         self.ASy.append(self.curToken)
 
         if self.checkToken(TokenType.NUMBER): 
+            self.VIC.append("LOADC " + self.curToken.text)
             self.nextToken()
         elif self.checkToken(TokenType.IDENT):
             # Ensure the variable already exists.
             if self.curToken.text not in self.symbols:
                 self.ASem.append(ErreurSemIllegal("Referencing variable before assignment: " + self.curToken.text))
 
+            self.VIC.append("LOAD " + self.curToken.text)
             self.nextToken()
         else:
             # Error!
@@ -458,7 +478,7 @@ def compilation(cmd) :
 
         print("\nAnalyse Syntaxique :", end="\n\n")
 
-        parser = Parser(AL_result, [], [])
+        parser = Parser(AL_result, [], [], [])
         parser.program()
            
         ASy_result = parser.ASy
@@ -495,6 +515,8 @@ def compilation(cmd) :
         
         ASem_result = parser.ASem
         TableSymbols = parser.symbols
+        VIC = parser.VIC
+        
         
         print("Table des Symboles : " + str(TableSymbols), end="\n\n")
         
@@ -524,8 +546,13 @@ def compilation(cmd) :
         print("\nGénération de code :", end="\n\n")
         
         
+        if not ASy_erreur :
+            for i in VIC :
+                print(i, end="\n")
+        
+        
         if GenCode_erreur :
-            print("Erreur gen code")
+            print("Erreur de génération de code")
             sys.exit()
         else :
             print("Génération de code valide !")
@@ -558,7 +585,13 @@ if __name__ == '__main__' :
             
     #     compilation(cmd)
         
-    with open("program.txt", "r") as inputFile:
-        cmd = inputFile.read()
+    # with open("program.txt", "r") as inputFile:
+    #     cmd = inputFile.read()
             
-    compilation(cmd)
+    # compilation(cmd)
+    
+    
+    cond = True
+    while cond:
+        cmd = input('> ')
+        compilation(cmd)
