@@ -269,9 +269,9 @@ class Parser:
                 temp += self.ASy[i].text
                 
             if var_name in self.symbols.keys() :
-                self.ASem.append(ErreurSemIllegal("Changement de valeur de constantes impossible (" + var_name + ")"))
+                self.ASem.append(ErreurSemIllegal("Changement de valeur des constantes impossible (" + var_name + ")"))
             else :            
-                self.symbols[var_name] = temp
+                self.symbols[var_name] = ["type: CONSTANTE", "valeur: " + str(temp), "taille : " + str(len(temp))]
                 self.VIC.append("STORE @ " + var_name)
                 self.VIC.append("\n")
                 
@@ -298,7 +298,7 @@ class Parser:
             for i in range(tempI, tempF):
                 temp += self.ASy[i].text
                         
-            self.symbols[var_name] = temp
+            self.symbols[var_name] = ["type: VARIABLE", "valeur: " + str(temp), "taille : " + str(len(temp))]
             self.VIC.append("STORE @ " + var_name)
             self.VIC.append("\n")
             
@@ -319,14 +319,12 @@ class Parser:
         self.expression()
         # Must be at least one comparison operator and another expression.
         if self.isComparisonOperator():
-            #print("(" + str(self.curToken.kind) + ": " + str(self.curToken.text) + ")", end=" ")
             self.ASy.append(self.curToken)
             self.nextToken()
             self.expression()
         else:
             self.ASy.append(ErreurSynIllegal("Expected comparison operator at: " + self.curToken.text))
 
-        # Can have 0 or more comparison operator and expressions.
         while self.isComparisonOperator():
             self.nextToken()
             self.expression()
@@ -390,7 +388,6 @@ class Parser:
             self.VIC.append("LOADC " + self.curToken.text)
             self.nextToken()
         elif self.checkToken(TokenType.IDENT):
-            # Ensure the variable already exists.
             if self.curToken.text not in self.symbols:
                 self.ASem.append(ErreurSemIllegal("Referencing variable before assignment: " + self.curToken.text))
 
@@ -515,10 +512,12 @@ def compilation(cmd) :
         
         ASem_result = parser.ASem
         TableSymbols = parser.symbols
-        VIC = parser.VIC
         
         
-        print("Table des Symboles : " + str(TableSymbols), end="\n\n")
+        print("Table des Symboles : \n")
+        
+        for o, p in TableSymbols.items() :
+            print(o, ' : ', p, end="\n")  
         
         for k in ASem_result :
             if isinstance(k, ErreurSemIllegal) :
@@ -533,7 +532,7 @@ def compilation(cmd) :
         if ASem_erreur :
             pass
         else :
-            print("Analyse Sémantique valide !")
+            print("\nAnalyse Sémantique valide !")
         
         
         print("\n################################################################################################################", end="\n")
@@ -546,6 +545,8 @@ def compilation(cmd) :
         print("\nGénération de code :", end="\n\n")
         
         
+        VIC = parser.VIC
+        
         if not ASy_erreur :
             GenCode_erreur = False
             for i in VIC :
@@ -557,6 +558,9 @@ def compilation(cmd) :
             sys.exit()
         else :
             print("Génération de code valide !")
+            
+        print("\n################################################################################################################", end="\n")
+        
     
 
 if __name__ == '__main__' :
@@ -586,13 +590,13 @@ if __name__ == '__main__' :
             
     #     compilation(cmd)
         
-    # with open("program.txt", "r") as inputFile:
-    #     cmd = inputFile.read()
+    with open("program.txt", "r") as inputFile:
+        cmd = inputFile.read()
             
-    # compilation(cmd)
+    compilation(cmd)
     
     
-    cond = True
-    while cond:
-        cmd = input('> ')
-        compilation(cmd)
+    # cond = True
+    # while cond:
+    #     cmd = input('> ')
+    #     compilation(cmd)
