@@ -1,8 +1,8 @@
-LET nums = 5
+LET index = 5
 LET a = 0
 LET b = 1
 VAR d = 56
-WHILE nums > 0 REPEAT
+WHILE index > 0 REPEAT
     LET c = 46 * 75
     VAR d = d + 5
 ENDWHILE

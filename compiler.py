@@ -226,9 +226,12 @@ class Parser:
 
         # "WHILE" comparison "REPEAT" {statement} "ENDWHILE"
         if self.checkToken(TokenType.WHILE):
-            #print("(" + str(self.curToken.kind) + ": " + str(self.curToken.text) + ")", end=" ")
             self.ASy.append(self.curToken)
             self.nextToken()
+
+            self.VIC.append("e1 :\t" + str(self.curToken.text))
+            self.VIC.append("JZERO e2")
+            self.VIC.append("\n")
         
             self.comparison()
             
@@ -242,6 +245,8 @@ class Parser:
                 self.statement()
                 
             self.ASy.append(self.curToken)
+            self.VIC.append("JUMP e1")
+            self.VIC.append("e2 : ")
             self.match(TokenType.ENDWHILE)
             
         # "LET" ident "=" expression
@@ -385,13 +390,22 @@ class Parser:
         self.ASy.append(self.curToken)
 
         if self.checkToken(TokenType.NUMBER): 
-            self.VIC.append("LOADC " + self.curToken.text)
+            if self.VIC == [] :
+                self.VIC.append("LOADC " + self.curToken.text)
+            elif self.VIC[-2] == "JZERO e2":
+                self.VIC.append("ignore")
+                print("ok")
+            else :
+                self.VIC.append("LOADC " + self.curToken.text)
             self.nextToken()
         elif self.checkToken(TokenType.IDENT):
             if self.curToken.text not in self.symbols:
                 self.ASem.append(ErreurSemIllegal("Referencing variable before assignment: " + self.curToken.text))
 
-            self.VIC.append("LOAD " + self.curToken.text)
+            if self.VIC[-2] == "JZERO e2":
+                pass
+            else :
+                self.VIC.append("LOAD " + self.curToken.text)
             self.nextToken()
         else:
             # Error!
@@ -549,7 +563,19 @@ def compilation(cmd) :
         
         if not ASy_erreur :
             GenCode_erreur = False
+
+            for k in range(len(VIC) - 1) :
+                if VIC[k] == "JZERO e2" :
+                    for i in range(k, len(VIC) - 1) :
+                        if VIC [i] == "e2 : " :
+                            break
+                        VIC[i] = "\t" + VIC[i]
+
+
+
             for i in VIC :
+                if i == "\t" + "ignore" :
+                    continue
                 print(i, end="\n")
         
         
