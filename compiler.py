@@ -247,6 +247,7 @@ class Parser:
             self.ASy.append(self.curToken)
             self.VIC.append("JUMP e1")
             self.VIC.append("e2 : ")
+            self.VIC.append("\n")
             self.match(TokenType.ENDWHILE)
             
         # "LET" ident "=" expression
@@ -394,7 +395,6 @@ class Parser:
                 self.VIC.append("LOADC " + self.curToken.text)
             elif self.VIC[-2] == "JZERO e2":
                 self.VIC.append("ignore")
-                print("ok")
             else :
                 self.VIC.append("LOADC " + self.curToken.text)
             self.nextToken()
@@ -405,7 +405,7 @@ class Parser:
             if self.VIC[-2] == "JZERO e2":
                 pass
             else :
-                self.VIC.append("LOAD " + self.curToken.text)
+                self.VIC.append("LOAD @ " + self.curToken.text)
             self.nextToken()
         else:
             # Error!

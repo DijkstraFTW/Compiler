@@ -1,8 +1,10 @@
-LET index = 5
+VAR index = 5
 LET a = 0
 LET b = 1
 VAR d = 56
 WHILE index > 0 REPEAT
     LET c = 46 * 75
     VAR d = d + 5
+    VAR index = index - 1
 ENDWHILE
+LET e = c * d
