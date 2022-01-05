@@ -391,10 +391,10 @@ class Parser:
         self.ASy.append(self.curToken)
 
         if self.checkToken(TokenType.NUMBER): 
-            if self.VIC == [] :
+            if len(self.VIC) == 0 or len(self.VIC) == 1:
                 self.VIC.append("LOADC " + self.curToken.text)
             elif self.VIC[-2] == "JZERO e2":
-                self.VIC.append("ignore")
+                self.VIC.append('ignore')
             else :
                 self.VIC.append("LOADC " + self.curToken.text)
             self.nextToken()
@@ -574,10 +574,9 @@ def compilation(cmd) :
 
 
             for i in VIC :
-                if i == "\t" + "ignore" :
+                if i == '\tignore' :
                     continue
                 print(i, end="\n")
-        
         
         if GenCode_erreur :
             print("Erreur de génération de code")
