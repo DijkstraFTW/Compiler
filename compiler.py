@@ -2,8 +2,6 @@
 
 import enum
 import sys
-import time
-from typing import List
 
 
 # TokenType is our enum for all the types of tokens.
@@ -228,11 +226,9 @@ class Parser:
         if self.checkToken(TokenType.WHILE):
             self.ASy.append(self.curToken)
             self.nextToken()
-
-            self.VIC.append("e1 :\t" + str(self.curToken.text))
-            self.VIC.append("JZERO e2")
-            self.VIC.append("\n")
         
+            self.VIC.append("e1 :\t")
+            self.VIC.append("while")        
             self.comparison()
             
             self.match(TokenType.REPEAT)
@@ -323,6 +319,21 @@ class Parser:
     def comparison(self):
 
         self.expression()
+        
+        if self.curToken.kind == (TokenType.EQEQ) :
+            self.VIC.append("JEQ ")
+        elif self.curToken.kind == (TokenType.NOTEQ) :
+            self.VIC.append("JNEQ ")
+        elif self.curToken.kind == (TokenType.GT) :
+            self.VIC.append("JGT ")
+        elif self.curToken.kind == (TokenType.GTEQ) :
+            self.VIC.append("JGEQ ")
+        elif self.curToken.kind == (TokenType.LT) :
+            self.VIC.append("JLR ")
+        elif self.curToken.kind == (TokenType.LTEQ) :
+            self.VIC.append("JLEQ ")
+        
+        
         # Must be at least one comparison operator and another expression.
         if self.isComparisonOperator():
             self.ASy.append(self.curToken)
@@ -393,31 +404,25 @@ class Parser:
         if self.checkToken(TokenType.NUMBER): 
             if len(self.VIC) == 0 or len(self.VIC) == 1:
                 self.VIC.append("LOADC " + self.curToken.text)
-            elif self.VIC[-2] == "JZERO e2":
-                self.VIC.append('ignore')
+            elif self.VIC[-1] in ("JEQ ", "JNEQ ", "JGT ", "JGEQ ", "JLR ", "JLEQ "):
+                self.VIC[-1] = self.VIC[-1] + self.curToken.text + "\n"
             else :
                 self.VIC.append("LOADC " + self.curToken.text)
             self.nextToken()
         elif self.checkToken(TokenType.IDENT):
             if self.curToken.text not in self.symbols:
                 self.ASem.append(ErreurSemIllegal("Referencing variable before assignment: " + self.curToken.text))
-
-            if self.VIC[-2] == "JZERO e2":
-                pass
             else :
                 self.VIC.append("LOAD @ " + self.curToken.text)
             self.nextToken()
         else:
-            # Error!
             self.ASy.append(ErreurSynIllegal("Unexpected token at " + self.curToken.text))
 
     # nl ::= '\n'+
     def nl(self):
         self.ASy.append(self.curToken)
-
-        # Require at least one newline.
         self.match(TokenType.NEWLINE)
-        # But we will allow extra newlines too, of course.
+        
         while self.checkToken(TokenType.NEWLINE):
             self.nextToken()
             
@@ -565,7 +570,7 @@ def compilation(cmd) :
             GenCode_erreur = False
 
             for k in range(len(VIC) - 1) :
-                if VIC[k] == "JZERO e2" :
+                if VIC[k] == "while" :
                     for i in range(k, len(VIC) - 1) :
                         if VIC [i] == "e2 : " :
                             break
@@ -574,10 +579,9 @@ def compilation(cmd) :
 
 
             for i in VIC :
-                if i == '\tignore' :
+                if i == "\twhile":
                     continue
                 print(i, end="\n")
-        
         if GenCode_erreur :
             print("Erreur de génération de code")
             sys.exit()
