@@ -1,41 +1,40 @@
 
 
-import enum
+# Imports
+
 import sys
 
 
-# TokenType is our enum for all the types of tokens.
-class TokenType(enum.Enum):
-    EOF = -1
-    NEWLINE = 0
-    NUMBER = 1
-    IDENT = 2
-    STRING = 3
-    # Keywords.
-    LABEL = 101
-    GOTO = 102
-    PRINT = 103
-    INPUT = 104
-    LET = 105
-    VAR = 106
-    THEN = 107
-    ENDIF = 108
-    WHILE = 109
-    REPEAT = 110
-    ENDWHILE = 111
-    # Operators.
-    EQ = 201  
-    PLUS = 202
-    MINUS = 203
-    ASTERISK = 204
-    SLASH = 205
-    EQEQ = 206
-    NOTEQ = 207
-    LT = 208
-    LTEQ = 209
-    GT = 210
-    GTEQ = 211
+# Unités lexicales 
 
+
+UL = {
+    
+    "UL_INT" : "INTEGER",
+    "UL_PLUS" : "PLUS",
+    "UL_MINUS" : "MINUS",
+    "UL_MUL" : "MULTIPLY",
+    "UL_DIV" : "DIVIDE",
+    "UL_NL" : "NEWLINE",
+    "UL_IDF" : "IDENTIFIER",
+    "UL_LET" : "LET",
+    "UL_VAR" : "VAR",
+    "UL_THEN" : "THEN",
+    "UL_WHILE" : "WHILE",
+    "UL_REP" : "REPEAT",
+    "UL_ENDW" : "ENDWHILE",
+    "UL_EQ" : "IS_EQUAL_TO",
+    "UL_EQEQ" : "EQUALS",
+    "UL_NTEQ" : "NOT_EQUAL",
+    "UL_LT" : "LESS_THAN",
+    "UL_LTEQ" : "LESS_THAN_EQUAL",
+    "UL_GT" : "GREATER_THAN",
+    "UL_GTEQ" : "GREATER_THAN_EQUAL",
+    "UL_EOF" : "END_OF_FILE"
+    
+}
+
+# Classes
 
 # Token contains the original text and the type of token.
 class Token:   
@@ -48,10 +47,9 @@ class Token:
 
     @staticmethod
     def checkIfKeyword(tokenText):
-        for kind in TokenType:
-            # Relies on all keyword enum values being 1XX.
-            if kind.name == tokenText and kind.value >= 100 and kind.value < 200:
-                return kind
+        for kind in UL:
+            if UL[kind] == tokenText :
+                return UL[kind]
         return None    
 
  
@@ -81,42 +79,42 @@ class Lexer:
         # Check the first character of this token to see if we can decide what it is.
         # If it is a multiple character operator (e.g., !=), number, identifier, or keyword, then we will process the rest.
         if self.curChar == '+':
-            token = Token(self.curChar, TokenType.PLUS)
+            token = Token(self.curChar, UL["UL_PLUS"])
         elif self.curChar == '-':
-            token = Token(self.curChar, TokenType.MINUS)
+            token = Token(self.curChar, UL["UL_MINUS"])
         elif self.curChar == '*':
-            token = Token(self.curChar, TokenType.ASTERISK)
+            token = Token(self.curChar, UL["UL_MUL"])
         elif self.curChar == '/':
-            token = Token(self.curChar, TokenType.SLASH)
+            token = Token(self.curChar, UL["UL_DIV"])
         elif self.curChar == '=':
             # Check whether this token is = or ==
             if self.peek() == '=':
                 lastChar = self.curChar
                 self.nextChar()
-                token = Token(lastChar + self.curChar, TokenType.EQEQ)
+                token = Token(lastChar + self.curChar, UL["UL_EQEQ"])
             else:
-                token = Token(self.curChar, TokenType.EQ)
+                token = Token(self.curChar, UL["UL_EQ"])
         elif self.curChar == '>':
             # Check whether this is token is > or >=
             if self.peek() == '=':
                 lastChar = self.curChar
                 self.nextChar()
-                token = Token(lastChar + self.curChar, TokenType.GTEQ)
+                token = Token(lastChar + self.curChar, UL["UL_GTEQ"])
             else:
-                token = Token(self.curChar, TokenType.GT)
+                token = Token(self.curChar, UL["UL_GT"])
         elif self.curChar == '<':
             # Check whether this is token is < or <=
             if self.peek() == '=':
                 lastChar = self.curChar
                 self.nextChar()
-                token = Token(lastChar + self.curChar, TokenType.LTEQ)
+                token = Token(lastChar + self.curChar, UL["UL_LTEQ"])
             else:
-                token = Token(self.curChar, TokenType.LT)
+                token = Token(self.curChar, UL["UL_LT"])
         elif self.curChar == '!':
             if self.peek() == '=':
                 lastChar = self.curChar
                 self.nextChar()
-                token = Token(lastChar + self.curChar, TokenType.NOTEQ)
+                token = Token(lastChar + self.curChar, UL["UL_NTEQ"])
             else:
                 token = ErreurCharIllegal("Expected !=, got !" + self.peek())
 
@@ -127,7 +125,7 @@ class Lexer:
             while self.peek().isdigit():
                 self.nextChar()
             tokText = self.source[startPos : self.curPos + 1] # Get the substring.
-            token = Token(tokText, TokenType.NUMBER)
+            token = Token(tokText, UL["UL_INT"])
             
         elif self.curChar.isalpha():
             # Leading character is a letter, so this must be an identifier or a keyword.
@@ -140,15 +138,15 @@ class Lexer:
             tokText = self.source[startPos : self.curPos + 1] # Get the substring.
             keyword = Token.checkIfKeyword(tokText)
             if keyword == None: # Identifier
-                token = Token(tokText, TokenType.IDENT)
+                token = Token(tokText, UL["UL_IDF"])
             else:   # Keyword
                 token = Token(tokText, keyword)
         elif self.curChar == '\n':
             # Newline.
-            token = Token('\n', TokenType.NEWLINE)
+            token = Token('\n', UL["UL_NL"])
         elif self.curChar == '\0':
              # EOF.
-            token = Token('', TokenType.EOF)
+            token = Token('', UL["UL_EOF"])
         else:
             # Unknown token!
             token = ErreurCharIllegal("Unknown token: " + self.curChar)
@@ -188,7 +186,7 @@ class Parser:
     # Try to match current token. If not, error. Advances the current token.
     def match(self, kind):
         if not self.checkToken(kind):
-            self.ASy.append(ErreurSynIllegal("Expected " + kind.name + ", got " + self.curToken.kind.name))
+            self.ASy.append(ErreurSynIllegal("Expected " + str(kind) + ", got " + str(self.curToken.kind)))
         self.nextToken()
 
     # Advances the current token.
@@ -199,7 +197,7 @@ class Parser:
 
     # Return true if the current token is a comparison operator.
     def isComparisonOperator(self):
-        return self.checkToken(TokenType.GT) or self.checkToken(TokenType.GTEQ) or self.checkToken(TokenType.LT) or self.checkToken(TokenType.LTEQ) or self.checkToken(TokenType.EQEQ) or self.checkToken(TokenType.NOTEQ)
+        return self.checkToken(UL["UL_GT"]) or self.checkToken(UL["UL_GTEQ"]) or self.checkToken(UL["UL_LT"]) or self.checkToken(UL["UL_LTEQ"]) or self.checkToken(UL["UL_EQEQ"]) or self.checkToken(UL["UL_NTEQ"])
     
     # Production rules.
 
@@ -207,23 +205,23 @@ class Parser:
     def program(self):
         
         # Since some newlines are required in our grammar, need to skip the excess.
-        while self.checkToken(TokenType.NEWLINE):
+        while self.checkToken(UL["UL_NL"]):
             self.nextToken()
 
         # Parse all the statements in the program.
-        while not self.checkToken(TokenType.EOF):
+        while not self.checkToken(UL["UL_EOF"]):
             self.statement()     
     
     # One of the following statements...
     def statement(self):
         # Check the first token to see what kind of statement this is.
         
-        if self.checkToken(TokenType.NUMBER):
+        if self.checkToken(UL["UL_INT"]):
             self.expression()
             self.nl()      
 
         # "WHILE" comparison "REPEAT" {statement} "ENDWHILE"
-        if self.checkToken(TokenType.WHILE):
+        if self.checkToken(UL["UL_WHILE"]):
             self.ASy.append(self.curToken)
             self.nextToken()
         
@@ -231,23 +229,22 @@ class Parser:
             self.VIC.append("while")        
             self.comparison()
             
-            self.match(TokenType.REPEAT)
+            self.match(UL["UL_REP"])
             
             self.nl()
             
-
             # Zero or more statements in the loop body.
-            while not self.checkToken(TokenType.ENDWHILE):
+            while not self.checkToken(UL["UL_ENDW"]):
                 self.statement()
                 
             self.ASy.append(self.curToken)
             self.VIC.append("JUMP e1")
             self.VIC.append("e2 : ")
             self.VIC.append("\n")
-            self.match(TokenType.ENDWHILE)
+            self.match(UL["UL_ENDW"])
             
         # "LET" ident "=" expression
-        elif self.checkToken(TokenType.LET):
+        elif self.checkToken(UL["UL_LET"]):
             #print("(" + str(self.curToken.kind) + ": " + str(self.curToken.text) + ")", end=" ")
             self.ASy.append(self.curToken)
             self.nextToken()
@@ -255,10 +252,10 @@ class Parser:
             var_name = self.curToken.text 
             
             self.ASy.append(self.curToken)
-            self.match(TokenType.IDENT)
+            self.match(UL["UL_IDF"])
             
             self.ASy.append(self.curToken)
-            self.match(TokenType.EQ)
+            self.match(UL["UL_EQ"])
             
             tempI = len(self.ASy)
             self.expression()
@@ -278,7 +275,7 @@ class Parser:
                 self.VIC.append("\n")
                 
             
-        elif self.checkToken(TokenType.VAR):
+        elif self.checkToken(UL["UL_VAR"]):
             self.ASy.append(self.curToken)
             self.nextToken()
 
@@ -287,10 +284,10 @@ class Parser:
             var_name = self.curToken.text 
             
             self.ASy.append(self.curToken)
-            self.match(TokenType.IDENT)
+            self.match(UL["UL_IDF"])
             
             self.ASy.append(self.curToken)
-            self.match(TokenType.EQ)
+            self.match(UL["UL_EQ"])
             
             tempI = len(self.ASy)
             self.expression()
@@ -307,9 +304,9 @@ class Parser:
 
         # This is not a valid statement. Error!
         else:
-            if self.curToken.kind.name == "EOF" :
+            if self.curToken.kind == UL["UL_EOF"] :
                 return ""
-            self.ASy.append(ErreurSynIllegal("Invalid statement at " + self.curToken.text + " (" + self.curToken.kind.name + ")"))
+            self.ASy.append(ErreurSynIllegal("Invalid statement at " + self.curToken.text + " (" + self.curToken.kind + ")"))
 
         # Newline.
         self.nl()
@@ -320,17 +317,17 @@ class Parser:
 
         self.expression()
         
-        if self.curToken.kind == (TokenType.EQEQ) :
+        if self.curToken.kind == (UL["UL_EQEQ"]) :
             self.VIC.append("JEQ ")
-        elif self.curToken.kind == (TokenType.NOTEQ) :
+        elif self.curToken.kind == (UL["UL_NTEQ"]) :
             self.VIC.append("JNEQ ")
-        elif self.curToken.kind == (TokenType.GT) :
+        elif self.curToken.kind == (UL["UL_GT"]) :
             self.VIC.append("JGT ")
-        elif self.curToken.kind == (TokenType.GTEQ) :
+        elif self.curToken.kind == (UL["UL_GTEQ"]) :
             self.VIC.append("JGEQ ")
-        elif self.curToken.kind == (TokenType.LT) :
+        elif self.curToken.kind == (UL["UL_LT"]) :
             self.VIC.append("JLR ")
-        elif self.curToken.kind == (TokenType.LTEQ) :
+        elif self.curToken.kind == (UL["UL_LTEQ"]) :
             self.VIC.append("JLEQ ")
         
         
@@ -353,18 +350,18 @@ class Parser:
         n = self.term()     
              
         # Can have 0 or more +/- and expressions.
-        while self.checkToken(TokenType.PLUS) or self.checkToken(TokenType.MINUS):
+        while self.checkToken(UL["UL_PLUS"]) or self.checkToken(UL["UL_MINUS"]):
             self.ASy.append(self.curToken)
             self.nextToken()
             self.term()
             
-        if n.kind == (TokenType.PLUS) :
+        if n.kind == (UL["UL_PLUS"]) :
             self.VIC.append("ADD " + self.curToken.text)
-        elif n.kind == (TokenType.MINUS) :
+        elif n.kind == (UL["UL_MINUS"]) :
             self.VIC.append("SUB " + self.curToken.text)
-        if n.kind == (TokenType.ASTERISK) :
+        if n.kind == (UL["UL_MUL"]) :
             self.VIC.append("MUL " + self.curToken.text)
-        elif n.kind == (TokenType.SLASH) :
+        elif n.kind == (UL["UL_DIV"]) :
             self.VIC.append("DIV " + self.curToken.text) 
 
 
@@ -374,8 +371,8 @@ class Parser:
         self.unary()
         temp = self.curToken
         # Can have 0 or more *// and expressions.
-        while self.checkToken(TokenType.ASTERISK) or self.checkToken(TokenType.SLASH):
-            if self.checkToken(TokenType.SLASH) :
+        while self.checkToken(UL["UL_MUL"]) or self.checkToken(UL["UL_DIV"]):
+            if self.checkToken(UL["UL_DIV"]) :
                 self.ASy.append(self.curToken)
                 self.nextToken()
                 if self.curToken.text == '0' :
@@ -392,7 +389,7 @@ class Parser:
     # unary ::= ["+" | "-"] primary
     def unary(self):
         # Optional unary +/-
-        if self.checkToken(TokenType.PLUS) or self.checkToken(TokenType.MINUS):
+        if self.checkToken(UL["UL_PLUS"]) or self.checkToken(UL["UL_MINUS"]):
             self.nextToken()        
         self.primary()
 
@@ -401,15 +398,15 @@ class Parser:
     def primary(self):
         self.ASy.append(self.curToken)
 
-        if self.checkToken(TokenType.NUMBER): 
+        if self.checkToken(UL["UL_INT"]): 
             if len(self.VIC) == 0 or len(self.VIC) == 1:
                 self.VIC.append("LOADC " + self.curToken.text)
             elif self.VIC[-1] in ("JEQ ", "JNEQ ", "JGT ", "JGEQ ", "JLR ", "JLEQ "):
-                self.VIC[-1] = self.VIC[-1] + self.curToken.text + "\n"
+                self.VIC[-1] = self.VIC[-1] + self.curToken.text + " e2" +"\n"
             else :
                 self.VIC.append("LOADC " + self.curToken.text)
             self.nextToken()
-        elif self.checkToken(TokenType.IDENT):
+        elif self.checkToken(UL["UL_IDF"]):
             if self.curToken.text not in self.symbols:
                 self.ASem.append(ErreurSemIllegal("Referencing variable before assignment: " + self.curToken.text))
             else :
@@ -421,9 +418,9 @@ class Parser:
     # nl ::= '\n'+
     def nl(self):
         self.ASy.append(self.curToken)
-        self.match(TokenType.NEWLINE)
+        self.match(UL["UL_NL"])
         
-        while self.checkToken(TokenType.NEWLINE):
+        while self.checkToken(UL["UL_NL"]):
             self.nextToken()
             
             
@@ -508,7 +505,7 @@ def compilation(cmd) :
         
         if not ASy_erreur :
             for i in ASy_result :
-                if i.kind == TokenType.NEWLINE :
+                if i.kind == UL["UL_NL"] :
                     print("\nNEWLINE", end = "\n")
                 else :
                     print("(" + str(i.kind) + ": " + str(i.text) + ")", end=" ")
