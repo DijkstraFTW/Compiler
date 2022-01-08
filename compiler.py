@@ -169,7 +169,7 @@ class AnalyseurSyntaxique:
 
     def correspond(self, type):
         if not self.test_UL(type):
-            self.ASy.append(ErreurSynIllegal("Expected " + str(type) + ", got " + str(self.UL_courante.type)))
+            self.ASy.append(ErreurSynIllegal(str(type) + " attendu, " + str(self.UL_courante.type) + " trouvé"))
         self.nextToken()
 
     def nextToken(self):
@@ -276,7 +276,7 @@ class AnalyseurSyntaxique:
         else:
             if self.UL_courante.type == UL["UL_EOF"] :
                 return ""
-            self.ASy.append(ErreurSynIllegal("Invalid statement at " + self.UL_courante.text + " (" + self.UL_courante.type + ")"))
+            self.ASy.append(ErreurSynIllegal("Commande invalide à " + self.UL_courante.text + " (" + self.UL_courante.type + ")"))
 
         self.nl()
 
@@ -304,7 +304,7 @@ class AnalyseurSyntaxique:
             self.nextToken()
             self.expression()
         else:
-            self.ASy.append(ErreurSynIllegal("Expected comparison operator at: " + self.UL_courante.text))
+            self.ASy.append(ErreurSynIllegal("Opérateur de comparaison attendu: " + self.UL_courante.text))
 
         while self.Comp_op():
             self.nextToken()
@@ -374,12 +374,12 @@ class AnalyseurSyntaxique:
             self.nextToken()
         elif self.test_UL(UL["UL_IDF"]):
             if self.UL_courante.text not in self.symbols:
-                self.ASem.append(ErreurSemIllegal("Referencing variable before assignment: " + self.UL_courante.text))
+                self.ASem.append(ErreurSemIllegal("Variable référenciée avant affectation: " + self.UL_courante.text))
             else :
                 self.VIC.append("LOAD @ " + self.UL_courante.text)
             self.nextToken()
         else:
-            self.ASy.append(ErreurSynIllegal("Unexpected token at " + self.UL_courante.text))
+            self.ASy.append(ErreurSynIllegal("Commande inattendue à " + self.UL_courante.text))
 
     # nl ::= '\n'+
     def nl(self):
@@ -505,7 +505,7 @@ def compilation(cmd) :
         
         for k in ASem_result :
             if isinstance(k, ErreurSemIllegal) :
-                print(k, end="\n")
+                print("\n" + str(k))
                 ASem_erreur = True
                 break
             
