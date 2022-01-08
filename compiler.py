@@ -36,131 +36,114 @@ UL = {
 
 # Classes
 
-# Token contains the original text and the type of token.
-class Token:   
-    def __init__(self, tokenText, tokenKind):
-        self.text = tokenText   # The token's actual text. Used for identifiers, strings, and numbers.
-        self.kind = tokenKind   # The TokenType that this token is classified as.
+class UniteLexicale:   
+    def __init__(self, text, type):
+        self.text = text  
+        self.type = type   
         
     def __repr__(self):        
-        return "(" + str(self.kind) + ":" + str(self.text) + ")"
+        return "(" + str(self.type) + ":" + str(self.text) + ")"
 
-    @staticmethod
-    def checkIfKeyword(tokenText):
-        for kind in UL:
-            if UL[kind] == tokenText :
-                return UL[kind]
+    def est_IDF(textUL):
+        for i in UL:
+            if UL[i] == textUL :
+                return UL[i]
         return None    
 
  
-class Lexer:
+class AnalyseLexicale:
     def __init__(self, input):
         self.source = input + '\n'
-        self.curChar = ''   
-        self.curPos = -1    
-        self.nextChar()
+        self.char_courant = ''   
+        self.pos_courant = -1    
+        self.char_prochain()
 
-    def nextChar(self):
-        self.curPos += 1
-        if self.curPos >= len(self.source):
-            self.curChar = '\0'  # EOF
+    def char_prochain(self):
+        self.pos_courant += 1
+        if self.pos_courant >= len(self.source):
+            self.char_courant = '\0'  # EOF
         else:
-            self.curChar = self.source[self.curPos]
+            self.char_courant = self.source[self.pos_courant]
 
-    def peek(self):
-        if self.curPos + 1 >= len(self.source):
+    def prochain(self):
+        if self.pos_courant + 1 >= len(self.source):
             return '\0'
-        return self.source[self.curPos+1]
+        return self.source[self.pos_courant+1]
+    
+    def sauter_vide(self):
+        while self.char_courant == ' ' or self.char_courant == '\t':
+            self.char_prochain()
 
-    def getToken(self):
-        self.skipWhitespace()
-        token = None
+    def UniteLexicale(self):
+        self.sauter_vide()
+        ULex = None
 
-        # Check the first character of this token to see if we can decide what it is.
-        # If it is a multiple character operator (e.g., !=), number, identifier, or keyword, then we will process the rest.
-        if self.curChar == '+':
-            token = Token(self.curChar, UL["UL_PLUS"])
-        elif self.curChar == '-':
-            token = Token(self.curChar, UL["UL_MINUS"])
-        elif self.curChar == '*':
-            token = Token(self.curChar, UL["UL_MUL"])
-        elif self.curChar == '/':
-            token = Token(self.curChar, UL["UL_DIV"])
-        elif self.curChar == '=':
-            # Check whether this token is = or ==
-            if self.peek() == '=':
-                lastChar = self.curChar
-                self.nextChar()
-                token = Token(lastChar + self.curChar, UL["UL_EQEQ"])
+        if self.char_courant == '+':
+            ULex = UniteLexicale(self.char_courant, UL["UL_PLUS"])
+        elif self.char_courant == '-':
+            ULex = UniteLexicale(self.char_courant, UL["UL_MINUS"])
+        elif self.char_courant == '*':
+            ULex = UniteLexicale(self.char_courant, UL["UL_MUL"])
+        elif self.char_courant == '/':
+            ULex = UniteLexicale(self.char_courant, UL["UL_DIV"])
+        elif self.char_courant == '=':
+            if self.prochain() == '=':
+                lastChar = self.char_courant
+                self.char_prochain()
+                ULex = UniteLexicale(lastChar + self.char_courant, UL["UL_EQEQ"])
             else:
-                token = Token(self.curChar, UL["UL_EQ"])
-        elif self.curChar == '>':
-            # Check whether this is token is > or >=
-            if self.peek() == '=':
-                lastChar = self.curChar
-                self.nextChar()
-                token = Token(lastChar + self.curChar, UL["UL_GTEQ"])
+                ULex = UniteLexicale(self.char_courant, UL["UL_EQ"])
+        elif self.char_courant == '>':
+            if self.prochain() == '=':
+                lastChar = self.char_courant
+                self.char_prochain()
+                ULex = UniteLexicale(lastChar + self.char_courant, UL["UL_GTEQ"])
             else:
-                token = Token(self.curChar, UL["UL_GT"])
-        elif self.curChar == '<':
-            # Check whether this is token is < or <=
-            if self.peek() == '=':
-                lastChar = self.curChar
-                self.nextChar()
-                token = Token(lastChar + self.curChar, UL["UL_LTEQ"])
+                ULex = UniteLexicale(self.char_courant, UL["UL_GT"])
+        elif self.char_courant == '<':
+            if self.prochain() == '=':
+                lastChar = self.char_courant
+                self.char_prochain()
+                ULex = UniteLexicale(lastChar + self.char_courant, UL["UL_LTEQ"])
             else:
-                token = Token(self.curChar, UL["UL_LT"])
-        elif self.curChar == '!':
-            if self.peek() == '=':
-                lastChar = self.curChar
-                self.nextChar()
-                token = Token(lastChar + self.curChar, UL["UL_NTEQ"])
+                ULex = UniteLexicale(self.char_courant, UL["UL_LT"])
+        elif self.char_courant == '!':
+            if self.prochain() == '=':
+                lastChar = self.char_courant
+                self.char_prochain()
+                ULex = UniteLexicale(lastChar + self.char_courant, UL["UL_NTEQ"])
             else:
-                token = ErreurCharIllegal("Expected !=, got !" + self.peek())
+                ULex = ErreurCharIllegal("Expected !=, got !" + self.peek())
 
-        elif self.curChar.isdigit():
-            # Leading character is a digit, so this must be a number.
-            # Get all consecutive digits and decimal if there is one.
-            startPos = self.curPos
-            while self.peek().isdigit():
-                self.nextChar()
-            tokText = self.source[startPos : self.curPos + 1] # Get the substring.
-            token = Token(tokText, UL["UL_INT"])
+        elif self.char_courant.isdigit():
+            startPos = self.pos_courant
+            while self.prochain().isdigit():
+                self.char_prochain()
+            tokText = self.source[startPos : self.pos_courant + 1] # Get the substring.
+            ULex = UniteLexicale(tokText, UL["UL_INT"])
             
-        elif self.curChar.isalpha():
-            # Leading character is a letter, so this must be an identifier or a keyword.
-            # Get all consecutive alpha numeric characters.
-            startPos = self.curPos
-            while self.peek().isalnum():
-                self.nextChar()
+        elif self.char_courant.isalpha():
+            startPos = self.pos_courant
+            while self.prochain().isalnum():
+                self.char_prochain()
 
-            # Check if the token is in the list of keywords.
-            tokText = self.source[startPos : self.curPos + 1] # Get the substring.
-            keyword = Token.checkIfKeyword(tokText)
+            tokText = self.source[startPos : self.pos_courant + 1] # Get the substring.
+            keyword = UniteLexicale.est_IDF(tokText)
             if keyword == None: # Identifier
-                token = Token(tokText, UL["UL_IDF"])
-            else:   # Keyword
-                token = Token(tokText, keyword)
-        elif self.curChar == '\n':
-            # Newline.
-            token = Token('\n', UL["UL_NL"])
-        elif self.curChar == '\0':
-             # EOF.
-            token = Token('', UL["UL_EOF"])
+                ULex = UniteLexicale(tokText, UL["UL_IDF"])
+            else:   
+                ULex = UniteLexicale(tokText, keyword)
+        elif self.char_courant == '\n':
+            ULex = UniteLexicale('\n', UL["UL_NL"])
+        elif self.char_courant == '\0':
+            ULex = UniteLexicale('', UL["UL_EOF"])
         else:
-            # Unknown token!
-            token = ErreurCharIllegal("Unknown token: " + self.curChar)
+            ULex = ErreurCharIllegal("Unknown token: " + self.char_courant)
 
-        self.nextChar()
-        return token
-
-    # Skip whitespace except newlines, which we will use to indicate the end of a statement.
-    def skipWhitespace(self):
-        while self.curChar == ' ' or self.curChar == '\t':
-            self.nextChar()
+        self.char_prochain()
+        return ULex
   
 
-# Parser object keeps track of current token and checks if the code matches the grammar.
 class Parser:
     def __init__(self, lexer, ASy, ASem, VIC):
         self.lexer = lexer
@@ -177,22 +160,22 @@ class Parser:
 
     # Return true if the current token matches.
     def checkToken(self, kind):
-        return kind == self.curToken.kind
+        return kind == self.curToken.type
 
     # Return true if the next token matches.
     def checkPeek(self, kind):
-        return kind == self.peekToken.kind
+        return kind == self.peekToken.type
 
     # Try to match current token. If not, error. Advances the current token.
     def match(self, kind):
         if not self.checkToken(kind):
-            self.ASy.append(ErreurSynIllegal("Expected " + str(kind) + ", got " + str(self.curToken.kind)))
+            self.ASy.append(ErreurSynIllegal("Expected " + str(kind) + ", got " + str(self.curToken.type)))
         self.nextToken()
 
     # Advances the current token.
     def nextToken(self):
         self.curToken = self.peekToken
-        self.peekToken = self.lexer.getToken()
+        self.peekToken = self.lexer.UniteLexicale()
         # No need to worry about passing the EOF, lexer handles that.
 
     # Return true if the current token is a comparison operator.
@@ -245,7 +228,6 @@ class Parser:
             
         # "LET" ident "=" expression
         elif self.checkToken(UL["UL_LET"]):
-            #print("(" + str(self.curToken.kind) + ": " + str(self.curToken.text) + ")", end=" ")
             self.ASy.append(self.curToken)
             self.nextToken()
             
@@ -304,9 +286,9 @@ class Parser:
 
         # This is not a valid statement. Error!
         else:
-            if self.curToken.kind == UL["UL_EOF"] :
+            if self.curToken.type == UL["UL_EOF"] :
                 return ""
-            self.ASy.append(ErreurSynIllegal("Invalid statement at " + self.curToken.text + " (" + self.curToken.kind + ")"))
+            self.ASy.append(ErreurSynIllegal("Invalid statement at " + self.curToken.text + " (" + self.curToken.type + ")"))
 
         # Newline.
         self.nl()
@@ -317,17 +299,17 @@ class Parser:
 
         self.expression()
         
-        if self.curToken.kind == (UL["UL_EQEQ"]) :
+        if self.curToken.type == (UL["UL_EQEQ"]) :
             self.VIC.append("JEQ ")
-        elif self.curToken.kind == (UL["UL_NTEQ"]) :
+        elif self.curToken.type == (UL["UL_NTEQ"]) :
             self.VIC.append("JNEQ ")
-        elif self.curToken.kind == (UL["UL_GT"]) :
+        elif self.curToken.type == (UL["UL_GT"]) :
             self.VIC.append("JGT ")
-        elif self.curToken.kind == (UL["UL_GTEQ"]) :
+        elif self.curToken.type == (UL["UL_GTEQ"]) :
             self.VIC.append("JGEQ ")
-        elif self.curToken.kind == (UL["UL_LT"]) :
+        elif self.curToken.type == (UL["UL_LT"]) :
             self.VIC.append("JLR ")
-        elif self.curToken.kind == (UL["UL_LTEQ"]) :
+        elif self.curToken.type == (UL["UL_LTEQ"]) :
             self.VIC.append("JLEQ ")
         
         
@@ -355,13 +337,13 @@ class Parser:
             self.nextToken()
             self.term()
             
-        if n.kind == (UL["UL_PLUS"]) :
+        if n.type == (UL["UL_PLUS"]) :
             self.VIC.append("ADD " + self.curToken.text)
-        elif n.kind == (UL["UL_MINUS"]) :
+        elif n.type == (UL["UL_MINUS"]) :
             self.VIC.append("SUB " + self.curToken.text)
-        if n.kind == (UL["UL_MUL"]) :
+        if n.type == (UL["UL_MUL"]) :
             self.VIC.append("MUL " + self.curToken.text)
-        elif n.kind == (UL["UL_DIV"]) :
+        elif n.type == (UL["UL_DIV"]) :
             self.VIC.append("DIV " + self.curToken.text) 
 
 
@@ -465,19 +447,19 @@ def compilation(cmd) :
         print("\nAnalyse Lexicale :", end="\n\n")
 
         Un_Lex = []
-        lexer = Lexer(cmd)
-        AL_result = Lexer(cmd)
+        lexer = AnalyseLexicale(cmd)
+        AL_result = AnalyseLexicale(cmd)
         
-        while (lexer.peek() != '\0') :
-            Un_Lex.append(lexer.getToken())
-            lexer.nextChar()
+        while (lexer.prochain() != '\0') :
+            Un_Lex.append(lexer.UniteLexicale())
+            lexer.char_prochain()
         
         for i in Un_Lex :
             if isinstance(i, ErreurCharIllegal) :
                 print(i)
                 AL_erreur = True
                 break
-            print("UniteLexicale ( type = '" + str(i.kind) + "', valeur = '" + str(i.text) + "' )", end="\n") 
+            print("UniteLexicale ( type = '" + str(i.type) + "', valeur = '" + str(i.text) + "' )", end="\n") 
         
         if AL_erreur :
             print()
@@ -505,10 +487,10 @@ def compilation(cmd) :
         
         if not ASy_erreur :
             for i in ASy_result :
-                if i.kind == UL["UL_NL"] :
+                if i.type == UL["UL_NL"] :
                     print("\nNEWLINE", end = "\n")
                 else :
-                    print("(" + str(i.kind) + ": " + str(i.text) + ")", end=" ")
+                    print("(" + str(i.type) + ": " + str(i.text) + ")", end=" ")
         
         
         
