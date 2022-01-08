@@ -37,9 +37,10 @@ UL = {
 # Classes
 
 class UniteLexicale:   
-    def __init__(self, text, type):
+    def __init__(self, text, type, pos):
         self.text = text  
-        self.type = type   
+        self.type = type
+        self.pos = pos           
         
     def __repr__(self):        
         return "(" + str(self.type) + ":" + str(self.text) + ")"
@@ -79,66 +80,67 @@ class AnalyseLexicale:
         ULex = None
 
         if self.char_courant == '+':
-            ULex = UniteLexicale(self.char_courant, UL["UL_PLUS"])
+            ULex = UniteLexicale(self.char_courant, UL["UL_PLUS"], self.pos_courant)
         elif self.char_courant == '-':
-            ULex = UniteLexicale(self.char_courant, UL["UL_MINUS"])
+            ULex = UniteLexicale(self.char_courant, UL["UL_MINUS"], self.pos_courant)
         elif self.char_courant == '*':
-            ULex = UniteLexicale(self.char_courant, UL["UL_MUL"])
+            ULex = UniteLexicale(self.char_courant, UL["UL_MUL"], self.pos_courant)
         elif self.char_courant == '/':
-            ULex = UniteLexicale(self.char_courant, UL["UL_DIV"])
+            ULex = UniteLexicale(self.char_courant, UL["UL_DIV"], self.pos_courant)
         elif self.char_courant == '=':
             if self.prochain() == '=':
-                lastChar = self.char_courant
+                temp = self.char_courant
                 self.char_prochain()
-                ULex = UniteLexicale(lastChar + self.char_courant, UL["UL_EQEQ"])
+                ULex = UniteLexicale(temp + self.char_courant, UL["UL_EQEQ"], self.pos_courant)
             else:
-                ULex = UniteLexicale(self.char_courant, UL["UL_EQ"])
+                ULex = UniteLexicale(self.char_courant, UL["UL_EQ"], self.pos_courant)
         elif self.char_courant == '>':
             if self.prochain() == '=':
-                lastChar = self.char_courant
+                temp = self.char_courant
                 self.char_prochain()
-                ULex = UniteLexicale(lastChar + self.char_courant, UL["UL_GTEQ"])
+                ULex = UniteLexicale(temp + self.char_courant, UL["UL_GTEQ"], self.pos_courant)
             else:
-                ULex = UniteLexicale(self.char_courant, UL["UL_GT"])
+                ULex = UniteLexicale(self.char_courant, UL["UL_GT"], self.pos_courant)
         elif self.char_courant == '<':
             if self.prochain() == '=':
-                lastChar = self.char_courant
+                temp = self.char_courant
                 self.char_prochain()
-                ULex = UniteLexicale(lastChar + self.char_courant, UL["UL_LTEQ"])
+                ULex = UniteLexicale(temp + self.char_courant, UL["UL_LTEQ"], self.pos_courant)
             else:
-                ULex = UniteLexicale(self.char_courant, UL["UL_LT"])
+                ULex = UniteLexicale(self.char_courant, UL["UL_LT"], self.pos_courant)
         elif self.char_courant == '!':
             if self.prochain() == '=':
-                lastChar = self.char_courant
+                temp = self.char_courant
                 self.char_prochain()
-                ULex = UniteLexicale(lastChar + self.char_courant, UL["UL_NTEQ"])
+                ULex = UniteLexicale(temp + self.char_courant, UL["UL_NTEQ"], self.pos_courant)
             else:
                 ULex = ErreurCharIllegal("Expected !=, got !" + self.peek())
 
         elif self.char_courant.isdigit():
-            startPos = self.pos_courant
+            tempPos = self.pos_courant
             while self.prochain().isdigit():
                 self.char_prochain()
-            tokText = self.source[startPos : self.pos_courant + 1] # Get the substring.
-            ULex = UniteLexicale(tokText, UL["UL_INT"])
+            tokText = self.source[tempPos : self.pos_courant + 1] # Get the substring.
+            ULex = UniteLexicale(tokText, UL["UL_INT"], self.pos_courant)
             
         elif self.char_courant.isalpha():
-            startPos = self.pos_courant
+            tempPos = self.pos_courant
             while self.prochain().isalnum():
                 self.char_prochain()
 
-            tokText = self.source[startPos : self.pos_courant + 1] # Get the substring.
-            keyword = UniteLexicale.est_IDF(tokText)
-            if keyword == None: # Identifier
-                ULex = UniteLexicale(tokText, UL["UL_IDF"])
+            tokText = self.source[tempPos : self.pos_courant + 1] # Get the substring.
+            
+            idf = UniteLexicale.est_IDF(tokText)
+            if idf == None: # Identifier
+                ULex = UniteLexicale(tokText, UL["UL_IDF"], self.pos_courant)
             else:   
-                ULex = UniteLexicale(tokText, keyword)
+                ULex = UniteLexicale(tokText, idf, self.pos_courant)
         elif self.char_courant == '\n':
-            ULex = UniteLexicale('\n', UL["UL_NL"])
+            ULex = UniteLexicale('\n', UL["UL_NL"], self.pos_courant)
         elif self.char_courant == '\0':
-            ULex = UniteLexicale('', UL["UL_EOF"])
+            ULex = UniteLexicale('', UL["UL_EOF"], self.pos_courant)
         else:
-            ULex = ErreurCharIllegal("Unknown token: " + self.char_courant)
+            ULex = ErreurCharIllegal("Charactère inconnu: " + self.char_courant)
 
         self.char_prochain()
         return ULex
@@ -454,12 +456,13 @@ def compilation(cmd) :
             Un_Lex.append(lexer.UniteLexicale())
             lexer.char_prochain()
         
+        
         for i in Un_Lex :
             if isinstance(i, ErreurCharIllegal) :
                 print(i)
                 AL_erreur = True
                 break
-            print("UniteLexicale ( type = '" + str(i.type) + "', valeur = '" + str(i.text) + "' )", end="\n") 
+            print("UniteLexicale ( type = '" + str(i.type) + "', valeur = '" + str(i.text) + "', position = '" + str(i.pos - len(i.text) + 1) + "' )", end="\n") 
         
         if AL_erreur :
             print()
