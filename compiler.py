@@ -286,30 +286,30 @@ class AnalyseurSyntaxique:
 
         self.expression()
         
-        if self.UL_courante.type == (UL["UL_EQEQ"]) :
-            self.VIC.append("JEQ ")
-        elif self.UL_courante.type == (UL["UL_NTEQ"]) :
-            self.VIC.append("JNEQ ")
-        elif self.UL_courante.type == (UL["UL_GT"]) :
-            self.VIC.append("JGT ")
-        elif self.UL_courante.type == (UL["UL_GTEQ"]) :
-            self.VIC.append("JGEQ ")
-        elif self.UL_courante.type == (UL["UL_LT"]) :
-            self.VIC.append("JLR ")
-        elif self.UL_courante.type == (UL["UL_LTEQ"]) :
-            self.VIC.append("JLEQ ")
-        
         if self.Comp_op():
             self.ASy.append(self.UL_courante)
+            temp = self.UL_courante
             self.nextToken()
             self.expression()
+            if temp.type == (UL["UL_EQEQ"]) :
+                self.VIC.append("JE e2")
+            elif temp.type == (UL["UL_NTEQ"]) :
+                self.VIC.append("JNE e2")
+            elif temp.type == (UL["UL_GT"]) :
+                self.VIC.append("JG e2")
+            elif temp.type == (UL["UL_GTEQ"]) :
+                self.VIC.append("JGE e2")
+            elif temp.type == (UL["UL_LT"]) :
+                self.VIC.append("JL e2")
+            elif temp.type == (UL["UL_LTEQ"]) :
+                self.VIC.append("JLE e2")
+            self.VIC.append("\n")
         else:
             self.ASy.append(ErreurSynIllegal("Opérateur de comparaison attendu: " + self.UL_courante.text))
 
         while self.Comp_op():
             self.nextToken()
             self.expression()
-
 
     # expression ::= terme {( "-" | "+" ) terme}
     def expression(self):
@@ -367,8 +367,9 @@ class AnalyseurSyntaxique:
         if self.test_UL(UL["UL_INT"]): 
             if len(self.VIC) == 0 or len(self.VIC) == 1:
                 self.VIC.append("LOADC " + self.UL_courante.text)
-            elif self.VIC[-1] in ("JEQ ", "JNEQ ", "JGT ", "JGEQ ", "JLR ", "JLEQ "):
-                self.VIC[-1] = self.VIC[-1] + self.UL_courante.text + " e2" +"\n"
+            elif self.VIC[-2] == "while" :
+                self.VIC.append("LOADC " + self.UL_courante.text)
+                self.VIC.append("CMP")                                       
             else :
                 self.VIC.append("LOADC " + self.UL_courante.text)
             self.nextToken()
