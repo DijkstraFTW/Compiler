@@ -52,7 +52,7 @@ class UniteLexicale:
         return None    
 
  
-class AnalyseLexicale:
+class AnalyseurLexicale:
     def __init__(self, input):
         self.source = input + '\n'
         self.char_courant = ''   
@@ -62,7 +62,7 @@ class AnalyseLexicale:
     def char_prochain(self):
         self.pos_courant += 1
         if self.pos_courant >= len(self.source):
-            self.char_courant = '\0'  # EOF
+            self.char_courant = '\0'  
         else:
             self.char_courant = self.source[self.pos_courant]
 
@@ -120,7 +120,7 @@ class AnalyseLexicale:
             tempPos = self.pos_courant
             while self.prochain().isdigit():
                 self.char_prochain()
-            tokText = self.source[tempPos : self.pos_courant + 1] # Get the substring.
+            tokText = self.source[tempPos : self.pos_courant + 1] 
             ULex = UniteLexicale(tokText, UL["UL_INT"], self.pos_courant)
             
         elif self.char_courant.isalpha():
@@ -128,10 +128,10 @@ class AnalyseLexicale:
             while self.prochain().isalnum():
                 self.char_prochain()
 
-            tokText = self.source[tempPos : self.pos_courant + 1] # Get the substring.
+            tokText = self.source[tempPos : self.pos_courant + 1]
             
             idf = UniteLexicale.est_IDF(tokText)
-            if idf == None: # Identifier
+            if idf == None: 
                 ULex = UniteLexicale(tokText, UL["UL_IDF"], self.pos_courant)
             else:   
                 ULex = UniteLexicale(tokText, idf, self.pos_courant)
@@ -146,100 +146,90 @@ class AnalyseLexicale:
         return ULex
   
 
-class Parser:
-    def __init__(self, lexer, ASy, ASem, VIC):
-        self.lexer = lexer
+class AnalyseurSyntaxique:
+    def __init__(self, AL, ASy, ASem, VIC):
+        self.AL = AL
         self.ASy = ASy
         self.ASem = ASem
         self.VIC = VIC
         
 
-        self.symbols = {}    # All variables we have declared so far.
-        self.curToken = None
-        self.peekToken = None
+        self.symbols = {}    
+        self.UL_courante = None
+        self.UL_prochaine = None
         self.nextToken()
-        self.nextToken()    # Call this twice to initialize current and peek.
+        self.nextToken()    
 
-    # Return true if the current token matches.
-    def checkToken(self, kind):
-        return kind == self.curToken.type
+    def test_UL(self, type):
+        return type == self.UL_courante.type
 
-    # Return true if the next token matches.
-    def checkPeek(self, kind):
-        return kind == self.peekToken.type
-
-    # Try to match current token. If not, error. Advances the current token.
-    def match(self, kind):
-        if not self.checkToken(kind):
-            self.ASy.append(ErreurSynIllegal("Expected " + str(kind) + ", got " + str(self.curToken.type)))
-        self.nextToken()
-
-    # Advances the current token.
-    def nextToken(self):
-        self.curToken = self.peekToken
-        self.peekToken = self.lexer.UniteLexicale()
-        # No need to worry about passing the EOF, lexer handles that.
-
-    # Return true if the current token is a comparison operator.
-    def isComparisonOperator(self):
-        return self.checkToken(UL["UL_GT"]) or self.checkToken(UL["UL_GTEQ"]) or self.checkToken(UL["UL_LT"]) or self.checkToken(UL["UL_LTEQ"]) or self.checkToken(UL["UL_EQEQ"]) or self.checkToken(UL["UL_NTEQ"])
     
-    # Production rules.
+    def test_UL_prochaine(self, type):
+        return type == self.UL_prochaine.type
 
+    def correspond(self, type):
+        if not self.test_UL(type):
+            self.ASy.append(ErreurSynIllegal("Expected " + str(type) + ", got " + str(self.UL_courante.type)))
+        self.nextToken()
+
+    def nextToken(self):
+        self.UL_courante = self.UL_prochaine
+        self.UL_prochaine = self.AL.UniteLexicale()
+
+    def Comp_op(self):
+        return self.test_UL(UL["UL_GT"]) or self.test_UL(UL["UL_GTEQ"]) or self.test_UL(UL["UL_LT"]) or self.test_UL(UL["UL_LTEQ"]) or self.test_UL(UL["UL_EQEQ"]) or self.test_UL(UL["UL_NTEQ"])
+    
+    
     # program ::= {statement}
-    def program(self):
+    def AnalyseSyntaxique(self):
         
-        # Since some newlines are required in our grammar, need to skip the excess.
-        while self.checkToken(UL["UL_NL"]):
+        while self.test_UL(UL["UL_NL"]):
             self.nextToken()
 
-        # Parse all the statements in the program.
-        while not self.checkToken(UL["UL_EOF"]):
+        while not self.test_UL(UL["UL_EOF"]):
             self.statement()     
     
-    # One of the following statements...
+    
     def statement(self):
-        # Check the first token to see what kind of statement this is.
         
-        if self.checkToken(UL["UL_INT"]):
+        if self.test_UL(UL["UL_INT"]):
             self.expression()
             self.nl()      
 
         # "WHILE" comparison "REPEAT" {statement} "ENDWHILE"
-        if self.checkToken(UL["UL_WHILE"]):
-            self.ASy.append(self.curToken)
+        if self.test_UL(UL["UL_WHILE"]):
+            self.ASy.append(self.UL_courante)
             self.nextToken()
         
             self.VIC.append("e1 :\t")
             self.VIC.append("while")        
-            self.comparison()
+            self.comparaison()
             
-            self.match(UL["UL_REP"])
+            self.correspond(UL["UL_REP"])
             
             self.nl()
             
-            # Zero or more statements in the loop body.
-            while not self.checkToken(UL["UL_ENDW"]):
+            while not self.test_UL(UL["UL_ENDW"]):
                 self.statement()
                 
-            self.ASy.append(self.curToken)
+            self.ASy.append(self.UL_courante)
             self.VIC.append("JUMP e1")
             self.VIC.append("e2 : ")
             self.VIC.append("\n")
-            self.match(UL["UL_ENDW"])
+            self.correspond(UL["UL_ENDW"])
             
         # "LET" ident "=" expression
-        elif self.checkToken(UL["UL_LET"]):
-            self.ASy.append(self.curToken)
+        elif self.test_UL(UL["UL_LET"]):
+            self.ASy.append(self.UL_courante)
             self.nextToken()
             
-            var_name = self.curToken.text 
+            nom_var = self.UL_courante.text 
             
-            self.ASy.append(self.curToken)
-            self.match(UL["UL_IDF"])
+            self.ASy.append(self.UL_courante)
+            self.correspond(UL["UL_IDF"])
             
-            self.ASy.append(self.curToken)
-            self.match(UL["UL_EQ"])
+            self.ASy.append(self.UL_courante)
+            self.correspond(UL["UL_EQ"])
             
             tempI = len(self.ASy)
             self.expression()
@@ -251,27 +241,25 @@ class Parser:
                     break;
                 temp += self.ASy[i].text
                 
-            if var_name in self.symbols.keys() :
-                self.ASem.append(ErreurSemIllegal("Changement de valeur des constantes impossible (" + var_name + ")"))
+            if nom_var in self.symbols.keys() :
+                self.ASem.append(ErreurSemIllegal("Changement de valeur des constantes impossible (" + nom_var + ")"))
             else :            
-                self.symbols[var_name] = ["type: CONSTANTE", "valeur: " + str(temp), "taille : " + str(len(temp))]
-                self.VIC.append("STORE @ " + var_name)
+                self.symbols[nom_var] = ["type: CONSTANTE", "valeur: " + str(temp), "taille : " + str(len(temp))]
+                self.VIC.append("STORE @ " + nom_var)
                 self.VIC.append("\n")
                 
             
-        elif self.checkToken(UL["UL_VAR"]):
-            self.ASy.append(self.curToken)
+        elif self.test_UL(UL["UL_VAR"]):
+            self.ASy.append(self.UL_courante)
             self.nextToken()
-
-            #  Check if ident exists in symbol table. If not, declare it.
             
-            var_name = self.curToken.text 
+            nom_var = self.UL_courante.text 
             
-            self.ASy.append(self.curToken)
-            self.match(UL["UL_IDF"])
+            self.ASy.append(self.UL_courante)
+            self.correspond(UL["UL_IDF"])
             
-            self.ASy.append(self.curToken)
-            self.match(UL["UL_EQ"])
+            self.ASy.append(self.UL_courante)
+            self.correspond(UL["UL_EQ"])
             
             tempI = len(self.ASy)
             self.expression()
@@ -281,130 +269,125 @@ class Parser:
             for i in range(tempI, tempF):
                 temp += self.ASy[i].text
                         
-            self.symbols[var_name] = ["type: VARIABLE", "valeur: " + str(temp), "taille : " + str(len(temp))]
-            self.VIC.append("STORE @ " + var_name)
+            self.symbols[nom_var] = ["type: VARIABLE", "valeur: " + str(temp), "taille : " + str(len(temp))]
+            self.VIC.append("STORE @ " + nom_var)
             self.VIC.append("\n")
             
-
-        # This is not a valid statement. Error!
         else:
-            if self.curToken.type == UL["UL_EOF"] :
+            if self.UL_courante.type == UL["UL_EOF"] :
                 return ""
-            self.ASy.append(ErreurSynIllegal("Invalid statement at " + self.curToken.text + " (" + self.curToken.type + ")"))
+            self.ASy.append(ErreurSynIllegal("Invalid statement at " + self.UL_courante.text + " (" + self.UL_courante.type + ")"))
 
-        # Newline.
         self.nl()
 
 
     # comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
-    def comparison(self):
+    def comparaison(self):
 
         self.expression()
         
-        if self.curToken.type == (UL["UL_EQEQ"]) :
+        if self.UL_courante.type == (UL["UL_EQEQ"]) :
             self.VIC.append("JEQ ")
-        elif self.curToken.type == (UL["UL_NTEQ"]) :
+        elif self.UL_courante.type == (UL["UL_NTEQ"]) :
             self.VIC.append("JNEQ ")
-        elif self.curToken.type == (UL["UL_GT"]) :
+        elif self.UL_courante.type == (UL["UL_GT"]) :
             self.VIC.append("JGT ")
-        elif self.curToken.type == (UL["UL_GTEQ"]) :
+        elif self.UL_courante.type == (UL["UL_GTEQ"]) :
             self.VIC.append("JGEQ ")
-        elif self.curToken.type == (UL["UL_LT"]) :
+        elif self.UL_courante.type == (UL["UL_LT"]) :
             self.VIC.append("JLR ")
-        elif self.curToken.type == (UL["UL_LTEQ"]) :
+        elif self.UL_courante.type == (UL["UL_LTEQ"]) :
             self.VIC.append("JLEQ ")
         
-        
-        # Must be at least one comparison operator and another expression.
-        if self.isComparisonOperator():
-            self.ASy.append(self.curToken)
+        if self.Comp_op():
+            self.ASy.append(self.UL_courante)
             self.nextToken()
             self.expression()
         else:
-            self.ASy.append(ErreurSynIllegal("Expected comparison operator at: " + self.curToken.text))
+            self.ASy.append(ErreurSynIllegal("Expected comparison operator at: " + self.UL_courante.text))
 
-        while self.isComparisonOperator():
+        while self.Comp_op():
             self.nextToken()
             self.expression()
 
 
-    # expression ::= term {( "-" | "+" ) term}
+    # expression ::= terme {( "-" | "+" ) terme}
     def expression(self):
 
-        n = self.term()     
+        n = self.terme()     
              
-        # Can have 0 or more +/- and expressions.
-        while self.checkToken(UL["UL_PLUS"]) or self.checkToken(UL["UL_MINUS"]):
-            self.ASy.append(self.curToken)
+        while self.test_UL(UL["UL_PLUS"]) or self.test_UL(UL["UL_MINUS"]):
+            self.ASy.append(self.UL_courante)
             self.nextToken()
-            self.term()
+            self.terme()
             
         if n.type == (UL["UL_PLUS"]) :
-            self.VIC.append("ADD " + self.curToken.text)
+            self.VIC.append("ADD " + self.UL_courante.text)
         elif n.type == (UL["UL_MINUS"]) :
-            self.VIC.append("SUB " + self.curToken.text)
+            self.VIC.append("SUB " + self.UL_courante.text)
         if n.type == (UL["UL_MUL"]) :
-            self.VIC.append("MUL " + self.curToken.text)
+            self.VIC.append("MUL " + self.UL_courante.text)
         elif n.type == (UL["UL_DIV"]) :
-            self.VIC.append("DIV " + self.curToken.text) 
+            self.VIC.append("DIV " + self.UL_courante.text) 
 
 
-    # term ::= unary {( "/" | "*" ) unary}
-    def term(self):
+    # term ::= facteur {( "/" | "*" ) facteur}
+    def terme(self):
 
-        self.unary()
-        temp = self.curToken
-        # Can have 0 or more *// and expressions.
-        while self.checkToken(UL["UL_MUL"]) or self.checkToken(UL["UL_DIV"]):
-            if self.checkToken(UL["UL_DIV"]) :
-                self.ASy.append(self.curToken)
+        self.Sexpression()
+        temp = self.UL_courante
+        
+        while self.test_UL(UL["UL_MUL"]) or self.test_UL(UL["UL_DIV"]):
+            if self.test_UL(UL["UL_DIV"]) :
+                self.ASy.append(self.UL_courante)
                 self.nextToken()
-                if self.curToken.text == '0' :
+                if self.UL_courante.text == '0' :
                     self.ASem.append(ErreurSemIllegal("Division par 0"))
-                self.unary()
+                self.Sexpression()
             else : 
-                self.ASy.append(self.curToken)
+                self.ASy.append(self.UL_courante)
                 self.nextToken()
-                self.unary()
+                self.Sexpression()
         
         return temp
 
 
-    # unary ::= ["+" | "-"] primary
-    def unary(self):
-        # Optional unary +/-
-        if self.checkToken(UL["UL_PLUS"]) or self.checkToken(UL["UL_MINUS"]):
+    # Sexpression ::= ["+" | "-"] facteur
+    def Sexpression(self):
+        if self.test_UL(UL["UL_PLUS"]) or self.test_UL(UL["UL_MINUS"]):
             self.nextToken()        
-        self.primary()
+        self.facteur()
 
 
     # primary ::= number | ident
-    def primary(self):
-        self.ASy.append(self.curToken)
+    def facteur(self):
+        
+        self.ASy.append(self.UL_courante)
 
-        if self.checkToken(UL["UL_INT"]): 
+        if self.test_UL(UL["UL_INT"]): 
             if len(self.VIC) == 0 or len(self.VIC) == 1:
-                self.VIC.append("LOADC " + self.curToken.text)
+                self.VIC.append("LOADC " + self.UL_courante.text)
             elif self.VIC[-1] in ("JEQ ", "JNEQ ", "JGT ", "JGEQ ", "JLR ", "JLEQ "):
-                self.VIC[-1] = self.VIC[-1] + self.curToken.text + " e2" +"\n"
+                self.VIC[-1] = self.VIC[-1] + self.UL_courante.text + " e2" +"\n"
             else :
-                self.VIC.append("LOADC " + self.curToken.text)
+                self.VIC.append("LOADC " + self.UL_courante.text)
             self.nextToken()
-        elif self.checkToken(UL["UL_IDF"]):
-            if self.curToken.text not in self.symbols:
-                self.ASem.append(ErreurSemIllegal("Referencing variable before assignment: " + self.curToken.text))
+        elif self.test_UL(UL["UL_IDF"]):
+            if self.UL_courante.text not in self.symbols:
+                self.ASem.append(ErreurSemIllegal("Referencing variable before assignment: " + self.UL_courante.text))
             else :
-                self.VIC.append("LOAD @ " + self.curToken.text)
+                self.VIC.append("LOAD @ " + self.UL_courante.text)
             self.nextToken()
         else:
-            self.ASy.append(ErreurSynIllegal("Unexpected token at " + self.curToken.text))
+            self.ASy.append(ErreurSynIllegal("Unexpected token at " + self.UL_courante.text))
 
     # nl ::= '\n'+
     def nl(self):
-        self.ASy.append(self.curToken)
-        self.match(UL["UL_NL"])
         
-        while self.checkToken(UL["UL_NL"]):
+        self.ASy.append(self.UL_courante)
+        self.correspond(UL["UL_NL"])
+        
+        while self.test_UL(UL["UL_NL"]):
             self.nextToken()
             
             
@@ -449,12 +432,12 @@ def compilation(cmd) :
         print("\nAnalyse Lexicale :", end="\n\n")
 
         Un_Lex = []
-        lexer = AnalyseLexicale(cmd)
-        AL_result = AnalyseLexicale(cmd)
+        AL = AnalyseurLexicale(cmd)
+        AL_result = AnalyseurLexicale(cmd)
         
-        while (lexer.prochain() != '\0') :
-            Un_Lex.append(lexer.UniteLexicale())
-            lexer.char_prochain()
+        while (AL.prochain() != '\0') :
+            Un_Lex.append(AL.UniteLexicale())
+            AL.char_prochain()
         
         
         for i in Un_Lex :
@@ -476,10 +459,10 @@ def compilation(cmd) :
 
         print("\nAnalyse Syntaxique :", end="\n\n")
 
-        parser = Parser(AL_result, [], [], [])
-        parser.program()
+        AS = AnalyseurSyntaxique(AL_result, [], [], [])
+        AS.AnalyseSyntaxique()
            
-        ASy_result = parser.ASy
+        ASy_result = AS.ASy
         
         for k in ASy_result :
             if isinstance(k, ErreurSynIllegal) :
@@ -511,8 +494,8 @@ def compilation(cmd) :
         print("\nAnalyse Sémantique :", end="\n\n")
         
         
-        ASem_result = parser.ASem
-        TableSymbols = parser.symbols
+        ASem_result = AS.ASem
+        TableSymbols = AS.symbols
         
         
         print("Table des Symboles : \n")
@@ -546,7 +529,7 @@ def compilation(cmd) :
         print("\nGénération de code :", end="\n\n")
         
         
-        VIC = parser.VIC
+        VIC = AS.VIC
         
         if not ASy_erreur :
             GenCode_erreur = False
