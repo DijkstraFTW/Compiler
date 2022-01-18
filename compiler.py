@@ -157,8 +157,8 @@ class AnalyseurSyntaxique:
         self.symbols = {}    
         self.UL_courante = None
         self.UL_prochaine = None
-        self.nextToken()
-        self.nextToken()    
+        self.ulProchaine()
+        self.ulProchaine()    
 
     def test_UL(self, type):
         return type == self.UL_courante.type
@@ -170,9 +170,9 @@ class AnalyseurSyntaxique:
     def correspond(self, type):
         if not self.test_UL(type):
             self.ASy.append(ErreurSynIllegal(str(type) + " attendu, " + str(self.UL_courante.type) + " trouvé"))
-        self.nextToken()
+        self.ulProchaine()
 
-    def nextToken(self):
+    def ulProchaine(self):
         self.UL_courante = self.UL_prochaine
         self.UL_prochaine = self.AL.UniteLexicale()
 
@@ -184,7 +184,7 @@ class AnalyseurSyntaxique:
     def AnalyseSyntaxique(self):
         
         while self.test_UL(UL["UL_NL"]):
-            self.nextToken()
+            self.ulProchaine()
 
         while not self.test_UL(UL["UL_EOF"]):
             self.statement()     
@@ -199,7 +199,7 @@ class AnalyseurSyntaxique:
         # "WHILE" comparison "REPEAT" {statement} "ENDWHILE"
         if self.test_UL(UL["UL_WHILE"]):
             self.ASy.append(self.UL_courante)
-            self.nextToken()
+            self.ulProchaine()
         
             self.VIC.append("e1 :\t")
             self.VIC.append("while")        
@@ -221,7 +221,7 @@ class AnalyseurSyntaxique:
         # "LET" ident "=" expression
         elif self.test_UL(UL["UL_LET"]):
             self.ASy.append(self.UL_courante)
-            self.nextToken()
+            self.ulProchaine()
             
             nom_var = self.UL_courante.text 
             
@@ -251,7 +251,7 @@ class AnalyseurSyntaxique:
             
         elif self.test_UL(UL["UL_VAR"]):
             self.ASy.append(self.UL_courante)
-            self.nextToken()
+            self.ulProchaine()
             
             nom_var = self.UL_courante.text 
             
@@ -289,7 +289,7 @@ class AnalyseurSyntaxique:
         if self.Comp_op():
             self.ASy.append(self.UL_courante)
             temp = self.UL_courante
-            self.nextToken()
+            self.ulProchaine()
             self.expression()
             if temp.type == (UL["UL_EQEQ"]) :
                 self.VIC.append("JE e2")
@@ -308,7 +308,7 @@ class AnalyseurSyntaxique:
             self.ASy.append(ErreurSynIllegal("Opérateur de comparaison attendu: " + self.UL_courante.text))
 
         while self.Comp_op():
-            self.nextToken()
+            self.ulProchaine()
             self.expression()
 
     # expression ::= terme {( "-" | "+" ) terme}
@@ -318,7 +318,7 @@ class AnalyseurSyntaxique:
              
         while self.test_UL(UL["UL_PLUS"]) or self.test_UL(UL["UL_MINUS"]):
             self.ASy.append(self.UL_courante)
-            self.nextToken()
+            self.ulProchaine()
             self.terme()
             
         if n.type == (UL["UL_PLUS"]) :
@@ -340,13 +340,13 @@ class AnalyseurSyntaxique:
         while self.test_UL(UL["UL_MUL"]) or self.test_UL(UL["UL_DIV"]):
             if self.test_UL(UL["UL_DIV"]) :
                 self.ASy.append(self.UL_courante)
-                self.nextToken()
+                self.ulProchaine()
                 if self.UL_courante.text == '0' :
                     self.ASem.append(ErreurSemIllegal("Division par 0"))
                 self.Sexpression()
             else : 
                 self.ASy.append(self.UL_courante)
-                self.nextToken()
+                self.ulProchaine()
                 self.Sexpression()
         
         return temp
@@ -355,7 +355,7 @@ class AnalyseurSyntaxique:
     # Sexpression ::= ["+" | "-"] facteur
     def Sexpression(self):
         if self.test_UL(UL["UL_PLUS"]) or self.test_UL(UL["UL_MINUS"]):
-            self.nextToken()        
+            self.ulProchaine()        
         self.facteur()
 
 
@@ -372,13 +372,13 @@ class AnalyseurSyntaxique:
                 self.VIC.append("CMP")                                       
             else :
                 self.VIC.append("LOADC " + self.UL_courante.text)
-            self.nextToken()
+            self.ulProchaine()
         elif self.test_UL(UL["UL_IDF"]):
             if self.UL_courante.text not in self.symbols:
                 self.ASem.append(ErreurSemIllegal("Variable référenciée avant affectation: " + self.UL_courante.text))
             else :
                 self.VIC.append("LOAD @ " + self.UL_courante.text)
-            self.nextToken()
+            self.ulProchaine()
         else:
             self.ASy.append(ErreurSynIllegal("Commande inattendue à " + self.UL_courante.text))
 
@@ -389,7 +389,7 @@ class AnalyseurSyntaxique:
         self.correspond(UL["UL_NL"])
         
         while self.test_UL(UL["UL_NL"]):
-            self.nextToken()
+            self.ulProchaine()
             
             
 # Erreurs
