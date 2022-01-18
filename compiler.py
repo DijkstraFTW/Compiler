@@ -180,23 +180,23 @@ class AnalyseurSyntaxique:
         return self.test_UL(UL["UL_GT"]) or self.test_UL(UL["UL_GTEQ"]) or self.test_UL(UL["UL_LT"]) or self.test_UL(UL["UL_LTEQ"]) or self.test_UL(UL["UL_EQEQ"]) or self.test_UL(UL["UL_NTEQ"])
     
     
-    # program ::= {statement}
+    # program ::= {instruction}
     def AnalyseSyntaxique(self):
         
         while self.test_UL(UL["UL_NL"]):
             self.ulProchaine()
 
         while not self.test_UL(UL["UL_EOF"]):
-            self.statement()     
+            self.instruction()     
     
     
-    def statement(self):
+    def instruction(self):
         
         if self.test_UL(UL["UL_INT"]):
             self.expression()
             self.nl()      
 
-        # "WHILE" comparison "REPEAT" {statement} "ENDWHILE"
+        # "WHILE" comparison "REPEAT" {instruction} "ENDWHILE"
         if self.test_UL(UL["UL_WHILE"]):
             self.ASy.append(self.UL_courante)
             self.ulProchaine()
@@ -210,7 +210,7 @@ class AnalyseurSyntaxique:
             self.nl()
             
             while not self.test_UL(UL["UL_ENDW"]):
-                self.statement()
+                self.instruction()
                 
             self.ASy.append(self.UL_courante)
             self.VIC.append("JUMP e1")
