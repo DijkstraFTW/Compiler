@@ -554,7 +554,7 @@ def compilation(cmd) :
         else :
             print("Génération de code valide !")
             
-        print("\n################################################################################################################", end="\n")
+        print("\n################################################################################################################", end="\n\n")
         
     
 
@@ -567,28 +567,32 @@ if __name__ == '__main__' :
 
 
 
-    # print("Choisissez votre méthode de saisie : 1- Commande   2- Fichier ")
-    # choix = int(input("---> "))
+    print("Choisissez votre méthode de saisie : 1- Commande   2- Fichier ")
+    choix = int(input("---> "))
     
     
-    # if choix == 1 :
+    if choix == 1 :
         
-    #     cond = True
-    #     while cond:
-    #         cmd = input('> ')
-    #         compilation(cmd)
+        cond = True
+        while cond:
+            cmd = input('> ')
+            compilation(cmd)
             
-    # elif choix == 2 :
+    elif choix == 2 :
         
-    #     with open("final/program.txt", "r") as inputFile:
-    #         cmd = inputFile.read()
+        with open("program.txt", "r") as inputFile:
+            cmd = inputFile.read()
             
-    #     compilation(cmd)
+        compilation(cmd)
         
-    with open("program.txt", "r") as inputFile:
-        cmd = inputFile.read()
+
+
+
+
+    # with open("program.txt", "r") as inputFile:
+    #     cmd = inputFile.read()
             
-    compilation(cmd)
+    # compilation(cmd)
     
     
     # cond = True
