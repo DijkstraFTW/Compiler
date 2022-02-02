@@ -19,7 +19,6 @@ UL = {
     "UL_IDF" : "IDENTIFIER",
     "UL_LET" : "LET",
     "UL_VAR" : "VAR",
-    "UL_THEN" : "THEN",
     "UL_WHILE" : "WHILE",
     "UL_REP" : "REPEAT",
     "UL_ENDW" : "ENDWHILE",
@@ -81,12 +80,16 @@ class AnalyseurLexicale:
 
         if self.char_courant == '+':
             ULex = UniteLexicale(self.char_courant, UL["UL_PLUS"], self.pos_courant)
+            
         elif self.char_courant == '-':
             ULex = UniteLexicale(self.char_courant, UL["UL_MINUS"], self.pos_courant)
+            
         elif self.char_courant == '*':
             ULex = UniteLexicale(self.char_courant, UL["UL_MUL"], self.pos_courant)
+            
         elif self.char_courant == '/':
             ULex = UniteLexicale(self.char_courant, UL["UL_DIV"], self.pos_courant)
+
         elif self.char_courant == '=':
             if self.prochain() == '=':
                 temp = self.char_courant
@@ -94,6 +97,7 @@ class AnalyseurLexicale:
                 ULex = UniteLexicale(temp + self.char_courant, UL["UL_EQEQ"], self.pos_courant)
             else:
                 ULex = UniteLexicale(self.char_courant, UL["UL_EQ"], self.pos_courant)
+                
         elif self.char_courant == '>':
             if self.prochain() == '=':
                 temp = self.char_courant
@@ -101,6 +105,7 @@ class AnalyseurLexicale:
                 ULex = UniteLexicale(temp + self.char_courant, UL["UL_GTEQ"], self.pos_courant)
             else:
                 ULex = UniteLexicale(self.char_courant, UL["UL_GT"], self.pos_courant)
+                
         elif self.char_courant == '<':
             if self.prochain() == '=':
                 temp = self.char_courant
@@ -108,6 +113,7 @@ class AnalyseurLexicale:
                 ULex = UniteLexicale(temp + self.char_courant, UL["UL_LTEQ"], self.pos_courant)
             else:
                 ULex = UniteLexicale(self.char_courant, UL["UL_LT"], self.pos_courant)
+                
         elif self.char_courant == '!':
             if self.prochain() == '=':
                 temp = self.char_courant
@@ -120,25 +126,28 @@ class AnalyseurLexicale:
             tempPos = self.pos_courant
             while self.prochain().isdigit():
                 self.char_prochain()
-            tokText = self.source[tempPos : self.pos_courant + 1] 
-            ULex = UniteLexicale(tokText, UL["UL_INT"], self.pos_courant)
+            tempText = self.source[tempPos : self.pos_courant + 1] 
+            ULex = UniteLexicale(tempText, UL["UL_INT"], self.pos_courant)
             
         elif self.char_courant.isalpha():
             tempPos = self.pos_courant
             while self.prochain().isalnum():
                 self.char_prochain()
 
-            tokText = self.source[tempPos : self.pos_courant + 1]
+            tempText = self.source[tempPos : self.pos_courant + 1]
             
-            idf = UniteLexicale.est_IDF(tokText)
+            idf = UniteLexicale.est_IDF(tempText)
             if idf == None: 
-                ULex = UniteLexicale(tokText, UL["UL_IDF"], self.pos_courant)
+                ULex = UniteLexicale(tempText, UL["UL_IDF"], self.pos_courant)
             else:   
-                ULex = UniteLexicale(tokText, idf, self.pos_courant)
+                ULex = UniteLexicale(tempText, idf, self.pos_courant)
+                
         elif self.char_courant == '\n':
             ULex = UniteLexicale('\n', UL["UL_NL"], self.pos_courant)
+            
         elif self.char_courant == '\0':
             ULex = UniteLexicale('', UL["UL_EOF"], self.pos_courant)
+            
         else:
             ULex = ErreurCharIllegal("Charactère inconnu: " + self.char_courant)
 
@@ -162,7 +171,6 @@ class AnalyseurSyntaxique:
 
     def test_UL(self, type):
         return type == self.UL_courante.type
-
     
     def test_UL_prochaine(self, type):
         return type == self.UL_prochaine.type
@@ -180,7 +188,8 @@ class AnalyseurSyntaxique:
         return self.test_UL(UL["UL_GT"]) or self.test_UL(UL["UL_GTEQ"]) or self.test_UL(UL["UL_LT"]) or self.test_UL(UL["UL_LTEQ"]) or self.test_UL(UL["UL_EQEQ"]) or self.test_UL(UL["UL_NTEQ"])
     
     
-    # program ::= {instruction}
+    
+    
     def AnalyseSyntaxique(self):
         
         while self.test_UL(UL["UL_NL"]):
@@ -196,7 +205,7 @@ class AnalyseurSyntaxique:
             self.expression()
             self.nl()      
 
-        # "WHILE" comparison "REPEAT" {instruction} "ENDWHILE"
+
         if self.test_UL(UL["UL_WHILE"]):
             self.ASy.append(self.UL_courante)
             self.ulProchaine()
@@ -218,7 +227,7 @@ class AnalyseurSyntaxique:
             self.VIC.append("\n")
             self.correspond(UL["UL_ENDW"])
             
-        # "LET" ident "=" expression
+            
         elif self.test_UL(UL["UL_LET"]):
             self.ASy.append(self.UL_courante)
             self.ulProchaine()
@@ -281,7 +290,6 @@ class AnalyseurSyntaxique:
         self.nl()
 
 
-    # comparison ::= expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)+
     def comparaison(self):
 
         self.expression()
@@ -311,7 +319,7 @@ class AnalyseurSyntaxique:
             self.ulProchaine()
             self.expression()
 
-    # expression ::= terme {( "-" | "+" ) terme}
+
     def expression(self):
 
         n = self.terme()     
@@ -331,7 +339,7 @@ class AnalyseurSyntaxique:
             self.VIC.append("DIV " + self.UL_courante.text) 
 
 
-    # term ::= facteur {( "/" | "*" ) facteur}
+    
     def terme(self):
 
         self.Sexpression()
@@ -352,14 +360,14 @@ class AnalyseurSyntaxique:
         return temp
 
 
-    # Sexpression ::= ["+" | "-"] facteur
+    
     def Sexpression(self):
         if self.test_UL(UL["UL_PLUS"]) or self.test_UL(UL["UL_MINUS"]):
             self.ulProchaine()        
         self.facteur()
 
 
-    # primary ::= number | ident
+    
     def facteur(self):
         
         self.ASy.append(self.UL_courante)
@@ -382,7 +390,7 @@ class AnalyseurSyntaxique:
         else:
             self.ASy.append(ErreurSynIllegal("Commande inattendue à " + self.UL_courante.text))
 
-    # nl ::= '\n'+
+    
     def nl(self):
         
         self.ASy.append(self.UL_courante)
