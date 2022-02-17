@@ -120,7 +120,7 @@ class AnalyseurLexicale:
                 self.char_prochain()
                 ULex = UniteLexicale(temp + self.char_courant, UL["UL_NTEQ"], self.pos_courant)
             else:
-                ULex = ErreurCharIllegal(" = attendu, " + str(self.prochain()) + " trouvé")
+                ULex = ErreurCharIllegal(" '=' attendu, " + str(self.prochain()) + " trouvé")
 
         elif self.char_courant.isdigit():
             tempPos = self.pos_courant
