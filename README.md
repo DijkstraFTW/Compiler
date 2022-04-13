@@ -10,6 +10,7 @@ After studying compilers and programming languages, it felt natural to try build
 However, this is still a very simplified version of a compiler, built to apply some concepts of my Theory of Compilers class.
 
 
+
 **The Compiler**
 
 The program starts by allowing the user to choose either one of the following inputs :
