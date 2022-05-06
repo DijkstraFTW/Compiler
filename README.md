@@ -5,7 +5,7 @@
 
 **General Introduction**
 
-After studying compilers and programming languages, it felt natural to try building a compiler from scratch. This project follows most of the usual compilers phases, lexical analyis, parsing, semantic analysis and code generation in Assembly x86, which are written entirely in Python. 
+After studying compilers and programming languages, it felt natural to try building a compiler from scratch. This project implements most of the usual compilers phases, lexical analyis, parsing, semantic analysis and code generation in Assembly x86, which are written entirely in Python. 
 
 However, this is still a very simplified version of a compiler, built to apply some concepts of my Theory of Compilers class.
 
