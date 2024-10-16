@@ -5,9 +5,9 @@
 
 **General Introduction**
 
-Having studied compilers and programming languages, it seemed natural to try to build a simplified version of a compiler from scratch. This project implements most of the usual compilers phases, lexical analyis, parsing, semantic analysis and code generation in Assembly x86, which are written entirely in Python. 
+As part of my study in compilers and programming languages, I took on the challenge of building a simplified compiler from scratch. This project implements the core phases of a typical compiler: lexical analysis, parsing, semantic analysis, and code generation. The entire compiler is written in Python, with the final output being generated as x86 Assembly code.
 
-However, this is still a very simplified version of a compiler, built to apply some concepts of my Theory of Compilers class.
+While this is a simplified version of a full-fledged compiler, it effectively demonstrates the key concepts I learned in my Theory of Compilers course.
 
 <br />
 <br />
